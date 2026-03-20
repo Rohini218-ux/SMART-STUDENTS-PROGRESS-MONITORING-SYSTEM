@@ -1,0 +1,83 @@
+// HIGH RISK STUDENT ALERT - APEX TRIGGER
+trigger AcademicPerformanceTrigger on Academic_Performance__c (after insert, after update) {
+
+    List<Messaging.SingleEmailMessage> emails = new List<Messaging.SingleEmailMessage>();
+
+    for(Academic_Performance__c ap : Trigger.new){
+
+        // Check low marks condition
+        if(ap.End_Semester_Marks__c < 40){
+
+            Messaging.SingleEmailMessage mail = new Messaging.SingleEmailMessage();
+
+            // Mentor Email (Assuming field exists)
+            mail.setToAddresses(new String[]{ap.Mentor_Email__c});
+            mail.setSubject('High Risk Student Alert');
+
+            mail.setPlainTextBody(
+                'Student Name: ' + ap.Student__r.Name +
+                '\nMarks: ' + ap.End_Semester_Marks__c +
+                '\nStatus: High Risk'
+            );
+
+            emails.add(mail);
+        }
+    }
+
+    if(!emails.isEmpty()){
+        Messaging.sendEmail(emails);
+    }
+}
+// APEX CLASS 
+// PERFORMANCE CALCULATION
+public class PerformanceService {
+
+    public static String checkPerformance(Decimal marks){
+
+        if(marks < 40){
+            return 'High Risk';
+        }
+        else if(marks >= 40 && marks < 75){
+            return 'Average';
+        }
+        else{
+            return 'Good';
+        }
+    }
+}
+// GET STUDENT DATA
+public class StudentController {
+
+    public static List<Student__c> getStudents(){
+
+        return [SELECT Id, Name, Roll_Number__c, Department__c 
+                FROM Student__c];
+    }
+}
+//AUTO STATUS UPDATE
+trigger PerformanceStatusTrigger on Academic_Performance__c (before insert, before update) {
+
+    for(Academic_Performance__c ap : Trigger.new){
+
+        if(ap.End_Semester_Marks__c < 40){
+            ap.Status__c = 'High Risk';
+        }
+        else{
+            ap.Status__c = 'Normal';
+        }
+    }
+}
+//TASK MANAGEMENT
+public class TaskAssignmentService {
+
+    public static void assignTask(Id studentId){
+
+        Student_Task_Assignment__c task = new Student_Task_Assignment__c();
+
+        task.Student__c = studentId;
+        task.Assignment_Name__c = 'Improve Academic Performance';
+        task.Status__c = 'Pending';
+
+        insert task;
+    }
+}

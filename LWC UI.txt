@@ -1,0 +1,53 @@
+//HTML UI
+<template>
+    <lightning-card title="Student Dashboard">
+        <div class="slds-p-around_medium">
+
+            <lightning-datatable
+                key-field="Id"
+                data={students}
+                columns={columns}
+                hide-checkbox-column>
+            </lightning-datatable>
+
+        </div>
+    </lightning-card>
+</template>
+
+//JS LOGIC
+
+import { LightningElement, wire } from 'lwc';
+import getStudents from '@salesforce/apex/StudentController.getStudents';
+
+export default class StudentDashboard extends LightningElement {
+
+    students = [];
+
+    columns = [
+        { label: 'Name', fieldName: 'Name' },
+        { label: 'Roll Number', fieldName: 'Roll_Number__c' },
+        { label: 'Department', fieldName: 'Department__c' }
+    ];
+
+    @wire(getStudents)
+    wiredStudents({ error, data }) {
+        if (data) {
+            this.students = data;
+        } else if (error) {
+            console.error(error);
+        }
+    }
+} 
+
+//META XML FILE
+
+<?xml version="1.0" encoding="UTF-8"?>
+<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>59.0</apiVersion>
+    <isExposed>true</isExposed>
+
+    <targets>
+        <target>lightning__AppPage</target>
+        <target>lightning__HomePage</target>
+    </targets>
+</LightningComponentBundle>
